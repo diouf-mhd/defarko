@@ -3,12 +3,12 @@ import { getSupabase } from "./supabase";
 /** Réduit la photo (économise les données mobiles) puis l'envoie dans le stockage Supabase. */
 export async function uploadPhoto(file: File, userId: string): Promise<string> {
   const sb = getSupabase();
-  if (!sb) throw new Error("L'application n'est pas encore connectée à Supabase.");
+  if (!sb) throw new Error("Service momentanément indisponible. Réessaie plus tard.");
   const blob = await resizeToJpeg(file, 800, 0.82);
   const path = `${userId}/${crypto.randomUUID()}.jpg`;
-  const { error } = await sb.storage.from("photos").upload(path, blob, { contentType: "image/jpeg" });
+  const { error } = await sb.storage.from("defarko-photos").upload(path, blob, { contentType: "image/jpeg" });
   if (error) throw new Error("Impossible d'envoyer la photo. Réessaie avec une autre image.");
-  return sb.storage.from("photos").getPublicUrl(path).data.publicUrl;
+  return sb.storage.from("defarko-photos").getPublicUrl(path).data.publicUrl;
 }
 
 function resizeToJpeg(file: File, max: number, quality: number): Promise<Blob> {

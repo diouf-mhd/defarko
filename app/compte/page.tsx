@@ -73,7 +73,7 @@ export default function ComptePage() {
     if (!sb) return;
     setBusy(true);
     const { error } = await sb
-      .from("profiles")
+      .from("defarko_profiles")
       .update({ full_name: fullName.trim(), phone: phone ? toE164(phone) : null })
       .eq("id", user!.id);
     setBusy(false);

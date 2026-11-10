@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,10 +28,11 @@ export default function RegisterPage() {
     setError("");
     setInfo("");
     const sb = getSupabase();
-    if (!sb) return setError("L'application n'est pas encore connectée à Supabase.");
+    if (!sb) return setError("Service momentanément indisponible. Réessaie plus tard.");
     if (fullName.trim().length < 3) return setError("Entre ton nom complet.");
     if (!isValidPhone(phone)) return setError("Numéro de téléphone invalide (ex. 77 000 00 00).");
     if (password.length < 6) return setError("Le mot de passe doit contenir au moins 6 caractères.");
+    if (password !== confirmPassword) return setError("Les mots de passe ne correspondent pas.");
 
     setBusy(true);
     const { data, error } = await sb.auth.signUp({
@@ -65,6 +67,15 @@ export default function RegisterPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Au moins 6 caractères"
+        />
+        <Field
+          label="Confirmer le mot de passe"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Répète ton mot de passe"
         />
         <ErrorBox message={error} />
         <InfoBox message={info} />

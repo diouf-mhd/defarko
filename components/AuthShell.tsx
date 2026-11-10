@@ -1,4 +1,3 @@
-import { isSupabaseConfigured } from "@/lib/supabase";
 import BackButton from "./BackButton";
 import Logo from "./Logo";
 
@@ -27,12 +26,6 @@ export default function AuthShell({
       </header>
       <section className="relative z-10 -mt-8 flex-1 px-5 pb-10">
         <div className="card-shadow fade-up rounded-3xl bg-white p-6">{children}</div>
-        {!isSupabaseConfigured && (
-          <p className="mt-4 rounded-2xl bg-accent/20 px-4 py-3 text-center text-xs text-foreground/70">
-            Supabase n&apos;est pas encore connecté : renseigne <code>NEXT_PUBLIC_SUPABASE_URL</code> et{" "}
-            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> dans <code>.env.local</code>.
-          </p>
-        )}
       </section>
     </main>
   );

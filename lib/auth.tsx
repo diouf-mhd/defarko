@@ -45,8 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const [p, prov] = await Promise.all([
-      sb.from("profiles").select("id, full_name, phone, role").eq("id", u.id).maybeSingle(),
-      sb.from("providers").select("id, status").eq("user_id", u.id).maybeSingle(),
+      sb.from("defarko_profiles").select("id, full_name, phone, role").eq("id", u.id).maybeSingle(),
+      sb.from("defarko_providers").select("id, status").eq("user_id", u.id).maybeSingle(),
     ]);
     setState({
       user: { id: u.id, email: u.email ?? "" },

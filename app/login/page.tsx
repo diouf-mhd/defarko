@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError("");
     const sb = getSupabase();
     if (!sb) {
-      setError("L'application n'est pas encore connectée à Supabase.");
+      setError("Service momentanément indisponible. Réessaie plus tard.");
       return;
     }
     setBusy(true);

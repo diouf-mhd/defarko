@@ -22,9 +22,9 @@ function Inner({ id, auth }: { id: string; auth: Auth }) {
 
   async function save(v: ProviderFormValues) {
     const sb = getSupabase();
-    if (!sb || !provider) throw new Error("Connexion Supabase indisponible.");
+    if (!sb || !provider) throw new Error("Service momentanément indisponible. Réessaie plus tard.");
     const { status, ...rest } = v;
-    const { error } = await sb.from("providers").update(rest).eq("id", id);
+    const { error } = await sb.from("defarko_providers").update(rest).eq("id", id);
     if (error) throw new Error("Impossible d'enregistrer. Vérifie les informations.");
     if (status && status !== provider.status) await rpc("admin_set_provider_status", { p_provider: id, p_status: status });
     clearQueryCache("admin:");
@@ -38,7 +38,7 @@ function Inner({ id, auth }: { id: string; auth: Auth }) {
     const sb = getSupabase();
     if (!sb) return;
     setError("");
-    const { error } = await sb.from("providers").delete().eq("id", id);
+    const { error } = await sb.from("defarko_providers").delete().eq("id", id);
     if (error) {
       setError("Suppression impossible : des demandes existent pour cet ouvrier. Suspends-le plutôt.");
       return;

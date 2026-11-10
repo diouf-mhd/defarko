@@ -1,12 +1,19 @@
+import Logo from "./Logo";
+
 export default function Footer() {
   return (
-    <footer className="px-6 pb-4 pt-8 text-center text-[11px] leading-relaxed text-foreground/50">
-      <p className="font-semibold text-foreground/60">Defar ko · © 2026</p>
-      <p>
-        Conçu et développé par <span className="font-semibold">Moussa Diouf</span> &amp;{" "}
-        <span className="font-semibold">Abdou Karim Dione</span>
-      </p>
-      <p className="mt-1 text-[10px] text-foreground/40">Icônes 3D : Fluent Emoji (Microsoft, licence MIT)</p>
+    <footer className="mt-8 border-t border-brand/10 bg-white px-6 pb-8 pt-6 text-center">
+      <div className="mx-auto flex max-w-sm flex-col items-center">
+        <div className="flex items-center gap-2">
+          <Logo size={32} />
+          <span className="text-sm font-extrabold text-brand">Defar ko</span>
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-foreground/55">Conçu et développé par</p>
+        <p className="text-xs font-semibold text-foreground/75">
+          Moussa Diouf <span className="font-normal text-foreground/40">&amp;</span> Abdou Karim Dione
+        </p>
+        <p className="mt-4 border-t border-brand/10 pt-3 text-[10px] text-foreground/40">© 2026 Defar ko</p>
+      </div>
     </footer>
   );
 }

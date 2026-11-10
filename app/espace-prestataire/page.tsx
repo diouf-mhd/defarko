@@ -44,7 +44,7 @@ function Inner({ auth }: { auth: Auth }) {
     const previous = provider;
     mutate({ ...provider, availability: a }); // affichage immédiat
     setAvailError("");
-    const { error } = await sb.from("providers").update({ availability: a }).eq("id", provider.id);
+    const { error } = await sb.from("defarko_providers").update({ availability: a }).eq("id", provider.id);
     if (error) {
       mutate(previous);
       setAvailError("Impossible de changer ta disponibilité.");
@@ -55,8 +55,8 @@ function Inner({ auth }: { auth: Auth }) {
 
   async function save(v: ProviderFormValues) {
     const sb = getSupabase();
-    if (!sb) throw new Error("L'application n'est pas encore connectée à Supabase.");
-    const { error } = await sb.from("providers").update(v).eq("id", providerId!);
+    if (!sb) throw new Error("Service momentanément indisponible. Réessaie plus tard.");
+    const { error } = await sb.from("defarko_providers").update(v).eq("id", providerId!);
     if (error) throw new Error("Impossible d'enregistrer. Vérifie les informations.");
     clearQueryCache("cat:");
     await reload();

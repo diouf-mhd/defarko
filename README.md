@@ -67,6 +67,3 @@ L'application est une PWA : après déploiement (ex. Vercel), génère le paquet
 ou Bubblewrap. Icônes prêtes : `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`.
 Prévoir une politique de confidentialité et des captures d'écran.
 
-## Icônes
-
-Icônes 3D des métiers : Fluent Emoji (Microsoft, licence MIT).

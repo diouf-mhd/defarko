@@ -3,7 +3,7 @@ import type { Payment, Provider, RequestRow, Review } from "./types";
 
 function client() {
   const sb = getSupabase();
-  if (!sb) throw new Error("L'application n'est pas encore connectée à Supabase.");
+  if (!sb) throw new Error("Service momentanément indisponible. Réessaie plus tard.");
   return sb;
 }
 
@@ -15,7 +15,7 @@ function cleanError(msg: string): string {
 
 /** Appelle une fonction du parcours (RPC) et renvoie un message d'erreur lisible en français. */
 export async function rpc<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T> {
-  const { data, error } = await client().rpc(name, args);
+  const { data, error } = await client().rpc(`defarko_${name}`, args);
   if (error) throw new Error(cleanError(error.message));
   return data as T;
 }
@@ -28,7 +28,7 @@ export function toError(e: unknown): string {
 export async function getProviderCounts(): Promise<Record<string, number>> {
   const sb = getSupabase();
   if (!sb) return {};
-  const { data } = await sb.from("providers").select("category_slug").eq("status", "verifie");
+  const { data } = await sb.from("defarko_providers").select("category_slug").eq("status", "verifie");
   const counts: Record<string, number> = {};
   for (const row of data ?? []) {
     const s = (row as { category_slug: string }).category_slug;
@@ -41,7 +41,7 @@ export async function getProvidersByCategory(slug: string): Promise<Provider[]> 
   const sb = getSupabase();
   if (!sb) return [];
   const { data, error } = await sb
-    .from("providers")
+    .from("defarko_providers")
     .select("*")
     .eq("category_slug", slug)
     .eq("status", "verifie")
@@ -54,7 +54,7 @@ export async function getProvidersByCategory(slug: string): Promise<Provider[]> 
 export async function getProvider(id: string): Promise<Provider | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data, error } = await sb.from("providers").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from("defarko_providers").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(cleanError(error.message));
   return (data as Provider | null) ?? null;
 }
@@ -63,7 +63,7 @@ export async function getReviews(providerId: string): Promise<Review[]> {
   const sb = getSupabase();
   if (!sb) return [];
   const { data } = await sb
-    .from("reviews")
+    .from("defarko_reviews")
     .select("*")
     .eq("provider_id", providerId)
     .order("created_at", { ascending: false })
@@ -73,14 +73,14 @@ export async function getReviews(providerId: string): Promise<Review[]> {
 
 // ---------- Demandes ----------
 export const REQUEST_SELECT =
-  "*, provider:providers(id, full_name, phone, category_slug, photo_url, diagnostic_fee), client:profiles(full_name, phone), payments(*)";
+  "*, provider:defarko_providers(id, full_name, phone, category_slug, photo_url, diagnostic_fee), client:defarko_profiles(full_name, phone), defarko_payments(*)";
 
 export async function getRequest(id: string): Promise<RequestRow | null> {
   const { data, error } = await client()
-    .from("requests")
+    .from("defarko_requests")
     .select(REQUEST_SELECT)
     .eq("id", id)
-    .order("created_at", { referencedTable: "payments", ascending: true })
+    .order("created_at", { referencedTable: "defarko_payments", ascending: true })
     .maybeSingle();
   if (error) throw new Error(cleanError(error.message));
   return (data as unknown as RequestRow | null) ?? null;
@@ -88,9 +88,9 @@ export async function getRequest(id: string): Promise<RequestRow | null> {
 
 export async function getMyRequests(userId: string, providerId: string | null): Promise<{ asClient: RequestRow[]; asProvider: RequestRow[] }> {
   const sb = client();
-  const asClientQ = sb.from("requests").select(REQUEST_SELECT).eq("client_id", userId).order("updated_at", { ascending: false });
+  const asClientQ = sb.from("defarko_requests").select(REQUEST_SELECT).eq("client_id", userId).order("updated_at", { ascending: false });
   const asProviderQ = providerId
-    ? sb.from("requests").select(REQUEST_SELECT).eq("provider_id", providerId).order("updated_at", { ascending: false })
+    ? sb.from("defarko_requests").select(REQUEST_SELECT).eq("provider_id", providerId).order("updated_at", { ascending: false })
     : null;
   const [a, b] = await Promise.all([asClientQ, asProviderQ ?? Promise.resolve({ data: [], error: null })]);
   if (a.error) throw new Error(cleanError(a.error.message));
@@ -101,7 +101,7 @@ export async function getMyRequests(userId: string, providerId: string | null): 
 }
 
 export async function hasReviewed(requestId: string): Promise<boolean> {
-  const { data } = await client().from("reviews").select("id").eq("request_id", requestId).maybeSingle();
+  const { data } = await client().from("defarko_reviews").select("id").eq("request_id", requestId).maybeSingle();
   return Boolean(data);
 }
 
@@ -109,21 +109,21 @@ export async function hasReviewed(requestId: string): Promise<boolean> {
 export async function getReviewableRequest(providerId: string, userId: string): Promise<string | null> {
   const sb = client();
   const { data: reqs } = await sb
-    .from("requests")
+    .from("defarko_requests")
     .select("id")
     .eq("provider_id", providerId)
     .eq("client_id", userId)
     .in("status", ["termine", "reverse"]);
   const ids = (reqs ?? []).map((r) => (r as { id: string }).id);
   if (!ids.length) return null;
-  const { data: done } = await sb.from("reviews").select("request_id").in("request_id", ids);
+  const { data: done } = await sb.from("defarko_reviews").select("request_id").in("request_id", ids);
   const doneIds = new Set((done ?? []).map((r) => (r as { request_id: string }).request_id));
   return ids.find((id) => !doneIds.has(id)) ?? null;
 }
 
 // ---------- Administration ----------
 export async function getAllProviders(): Promise<Provider[]> {
-  const { data, error } = await client().from("providers").select("*").order("created_at", { ascending: false });
+  const { data, error } = await client().from("defarko_providers").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(cleanError(error.message));
   return (data ?? []) as Provider[];
 }
@@ -140,8 +140,8 @@ export type AdminPayment = Payment & {
 
 export async function getPaymentsToCheck(): Promise<AdminPayment[]> {
   const { data, error } = await client()
-    .from("payments")
-    .select("*, request:requests(id, status, description, client:profiles(full_name, phone), provider:providers(full_name, phone))")
+    .from("defarko_payments")
+    .select("*, request:defarko_requests(id, status, description, client:defarko_profiles(full_name, phone), provider:defarko_providers(full_name, phone))")
     .in("status", ["declare", "en_attente"])
     .order("created_at", { ascending: false });
   if (error) throw new Error(cleanError(error.message));
@@ -150,7 +150,7 @@ export async function getPaymentsToCheck(): Promise<AdminPayment[]> {
 
 export async function getAllRequests(): Promise<RequestRow[]> {
   const { data, error } = await client()
-    .from("requests")
+    .from("defarko_requests")
     .select(REQUEST_SELECT)
     .order("updated_at", { ascending: false })
     .limit(200);
@@ -159,7 +159,7 @@ export async function getAllRequests(): Promise<RequestRow[]> {
 }
 
 export async function getCommissionRates(): Promise<Record<string, number>> {
-  const { data } = await client().from("categories").select("slug, commission_pct");
+  const { data } = await client().from("defarko_categories").select("slug, commission_pct");
   const out: Record<string, number> = {};
   for (const r of data ?? []) out[(r as { slug: string }).slug] = Number((r as { commission_pct: number }).commission_pct);
   return out;

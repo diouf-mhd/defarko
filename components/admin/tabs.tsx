@@ -279,8 +279,8 @@ export function RequestsTab() {
 export function AddProviderTab({ adminId, onAdded }: { adminId: string; onAdded: () => void }) {
   async function submit(v: ProviderFormValues) {
     const sb = getSupabase();
-    if (!sb) throw new Error("L'application n'est pas encore connectée à Supabase.");
-    const { error } = await sb.from("providers").insert(v);
+    if (!sb) throw new Error("Service momentanément indisponible. Réessaie plus tard.");
+    const { error } = await sb.from("defarko_providers").insert(v);
     if (error) throw new Error("Impossible d'ajouter l'ouvrier. Vérifie les informations.");
     clearQueryCache("admin:");
     clearQueryCache("cat:");
