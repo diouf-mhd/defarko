@@ -50,6 +50,11 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Ton mot de passe"
         />
+        <p className="-mt-2 text-right text-sm">
+          <Link href="/forgot-password" className="font-semibold text-brand underline">
+            Mot de passe oublié ?
+          </Link>
+        </p>
         <ErrorBox message={error} />
         <PrimaryButton type="submit" disabled={busy}>
           {busy ? "Connexion…" : "Se connecter"}

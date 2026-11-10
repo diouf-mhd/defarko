@@ -119,6 +119,12 @@ export default function DashboardPage() {
         <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-foreground/55">
           <ShieldCheck size={14} /> Ouvriers vérifiés par l&apos;équipe Defar ko
         </p>
+        <Link
+          href="/admin"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground/45 underline decoration-foreground/25 underline-offset-4"
+        >
+          <ShieldCheck size={14} /> Accès administration
+        </Link>
       </section>
     </main>
   );
