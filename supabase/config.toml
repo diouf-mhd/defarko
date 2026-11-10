@@ -1,0 +1,7 @@
+# Configuration Supabase CLI pour Defar ko
+# Lier le projet : npx supabase link --project-ref <ton-project-ref>
+# Envoyer la base : npx supabase db push
+project_id = "defar-ko"
+
+[db]
+major_version = 15
