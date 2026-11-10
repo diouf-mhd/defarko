@@ -35,10 +35,15 @@ export function formatPhone(phone: string): string {
  * Vérifie dans ton compte Wave Business que le paramètre `amount` est accepté.
  */
 export function waveLink(amount: number): string | null {
-  const base = process.env.NEXT_PUBLIC_WAVE_BASE_URL;
-  if (!base) return null;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}amount=${amount}`;
+  const base =
+    process.env.NEXT_PUBLIC_WAVE_BASE_URL?.trim() || "https://pay.wave.com/m/M_sn_Mes0alYav5Hz/c/sn/";
+  try {
+    const url = new URL(base);
+    url.searchParams.set("amount", String(amount));
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 export function formatFcfa(amount: number): string {

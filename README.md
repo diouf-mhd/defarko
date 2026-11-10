@@ -49,7 +49,7 @@ Pendant les tests, dans Authentication > Providers > Email, tu peux désactiver 
 
 ## Paiement Wave
 
-Renseigne `NEXT_PUBLIC_WAVE_BASE_URL` (lien Wave Business sans montant). Le bouton ajoute `?amount=MONTANT`.
+Le lien Wave Business est configuré par défaut. Pour le remplacer, renseigne `NEXT_PUBLIC_WAVE_BASE_URL` avec un lien sans montant; le bouton ajoute ou remplace le paramètre `amount`.
 Le client peut modifier ce montant dans l'URL : l'admin doit **toujours vérifier le montant reçu dans Wave Business** avant de valider.
 
 ## Tests de la base
