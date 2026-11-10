@@ -28,6 +28,7 @@ const [legacyUser] = await q(`insert into auth.users (email, raw_user_meta_data)
 await db.exec(`insert into public.profiles (id, email, nom, prenom, role) values ('${legacyUser.id}', 'legacy@x.sn', 'User', 'Legacy', 'student')`);
 await db.exec(fs.readFileSync(new URL('../migrations/20261110000000_init.sql', import.meta.url), 'utf8'));
 await db.exec(fs.readFileSync(new URL('../migrations/20261110000200_backfill_profiles.sql', import.meta.url), 'utf8'));
+await db.exec(fs.readFileSync(new URL('../migrations/20261110000300_preferred_request_date.sql', import.meta.url), 'utf8'));
 console.log('Schéma chargé sans erreur');
 
 const [legacyProfile] = await q(`select full_name, phone, role from public.defarko_profiles where id='${legacyUser.id}'`);
@@ -87,7 +88,11 @@ ok(e && /permission denied/i.test(e), "un visiteur sans compte ne peut pas crée
 
 console.log('\n3. Parcours complet : diagnostic → devis → complément → confirmation → commission');
 await asUser(C.id);
-const [{ create_request: reqId }] = await q(`select public.defarko_create_request('${provId}','Panne de courant dans le salon','domicile','Diamniadio',1) as create_request`);
+e = await fails(() => q(`select public.defarko_create_request_with_date('${provId}','Panne de courant dans le salon','domicile','Diamniadio',1,current_date - 1)`));
+ok(e && /date souhaitée ne peut pas être dans le passé/i.test(e), "une date d'intervention passée est refusée");
+const [{ create_request_with_date: reqId }] = await q(`select public.defarko_create_request_with_date('${provId}','Panne de courant dans le salon','domicile','Diamniadio',1,current_date + 1) as create_request_with_date`);
+r = await q(`select preferred_date = current_date + 1 as date_matches from public.defarko_requests where id='${reqId}'`);
+ok(r[0].date_matches, "la date souhaitée est enregistrée avec la demande");
 r = await q(`select status, diagnostic_fee from public.defarko_requests where id='${reqId}'`);
 ok(r[0].status === 'diagnostic_a_payer' && r[0].diagnostic_fee === 3000, "demande créée : diagnostic 3000 à payer");
 r = await q(`select kind, amount, status from public.defarko_payments where request_id='${reqId}'`);

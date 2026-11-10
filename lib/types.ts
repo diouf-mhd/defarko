@@ -69,6 +69,7 @@ export type RequestRow = {
   description: string;
   mode: string | null;
   quartier: string | null;
+  preferred_date: string | null;
   units: number;
   diagnostic_fee: number;
   quote_amount: number | null;

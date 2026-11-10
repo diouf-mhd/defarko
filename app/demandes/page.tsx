@@ -27,7 +27,7 @@ function RequestCard({ r, as, index }: { r: RequestRow; as: "client" | "provider
           </div>
           <p className="mt-0.5 truncate text-sm text-foreground/65">{r.description}</p>
           <p className="mt-1 text-xs text-foreground/45">
-            {formatDate(r.created_at)}
+            {r.preferred_date ? `Intervention souhaitée le ${formatDate(r.preferred_date)}` : formatDate(r.created_at)}
             {paid > 0 && ` · ${formatFcfa(paid)} payés`}
           </p>
         </div>

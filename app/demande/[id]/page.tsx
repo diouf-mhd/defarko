@@ -16,7 +16,7 @@ import { Card, ErrorBox, PrimaryButton, Skeleton } from "@/components/ui";
 import Field from "@/components/Field";
 import { getRequest, hasReviewed, rpc, toError } from "@/lib/api";
 import { getCategory } from "@/lib/categories";
-import { formatDateTime, formatFcfa, formatPhone, MODE_LABELS, telLink, whatsappLink } from "@/lib/contact";
+import { formatDate, formatDateTime, formatFcfa, formatPhone, MODE_LABELS, telLink, whatsappLink } from "@/lib/contact";
 import { nextStepText, PAYMENT_KIND_LABEL, PAYMENT_STATUS_LABEL } from "@/lib/status";
 import { clearQueryCache, useQuery } from "@/lib/useQuery";
 import type { useAuth } from "@/lib/auth";
@@ -93,7 +93,31 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
     viewer === "client"
       ? { name: req.provider?.full_name, phone: req.provider?.phone }
       : { name: req.client?.full_name, phone: req.client?.phone };
-  const contactMsg = `Bonjour, je vous contacte au sujet de la demande Defar ko : « ${req.description} »`;
+  const currentRequest = req;
+
+  function contactOnWhatsApp() {
+    if (!other.phone) return;
+    const requestUrl = new URL(`/demande/${currentRequest.id}`, window.location.origin).toString();
+    const recipient = other.name || (viewer === "client" ? "" : "Client");
+    const message = [
+      `Bonjour${recipient ? ` ${recipient}` : ""} 👋`,
+      viewer === "client"
+        ? "Je vous contacte via Defar ko au sujet de mon intervention."
+        : "Je vous contacte via Defar ko au sujet de votre demande.",
+      `Besoin : ${currentRequest.description}`,
+      currentRequest.quartier && `Lieu de l'intervention : ${currentRequest.quartier}.`,
+      currentRequest.preferred_date && `Date souhaitée : ${formatDate(currentRequest.preferred_date)}.`,
+      viewer === "client"
+        ? "Pourriez-vous vous déplacer pour constater le problème et discuter du prix ? Sinon, je peux vous envoyer des photos ou une vidéo ici."
+        : "Je peux me déplacer pour constater le problème et discuter du prix. Vous pouvez aussi m'envoyer des photos ou une vidéo ici.",
+      `Suivre la demande : ${requestUrl}`,
+      "Merci et à bientôt !",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(whatsappLink(other.phone, message), "_blank", "noopener,noreferrer");
+  }
 
   const canQuote = viewer === "provider" && ["nouvelle", "diagnostic_paye", "devis_propose"].includes(req.status);
 
@@ -133,7 +157,14 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
 
           <p className="mt-4 rounded-2xl bg-[#f3f6fd] p-3 text-sm leading-relaxed">{req.description}</p>
           <p className="mt-2 text-xs text-foreground/55">
-            {[req.mode && MODE_LABELS[req.mode], req.quartier, formatDateTime(req.created_at)].filter(Boolean).join(" · ")}
+            {[
+              req.mode && MODE_LABELS[req.mode],
+              req.quartier && `Lieu : ${req.quartier}`,
+              req.preferred_date && `Date souhaitée : ${formatDate(req.preferred_date)}`,
+              formatDateTime(req.created_at),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
 
           <dl className="mt-4 space-y-1.5 text-sm">
@@ -162,14 +193,13 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
         {/* Contact de l'autre personne : numéro WhatsApp / appel direct */}
         {viewer !== "admin" && other.phone && !["annule"].includes(req.status) && (
           <div className="fade-up grid grid-cols-2 gap-2">
-            <a
-              href={whatsappLink(other.phone, contactMsg)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={contactOnWhatsApp}
               className="press flex items-center justify-center gap-2 rounded-2xl bg-success py-3 text-sm font-semibold text-white"
             >
               <MessageCircle size={18} /> WhatsApp
-            </a>
+            </button>
             <a href={telLink(other.phone)} className="press flex items-center justify-center gap-2 rounded-2xl bg-brand py-3 text-sm font-semibold text-white">
               <Phone size={18} /> {formatPhone(other.phone)}
             </a>

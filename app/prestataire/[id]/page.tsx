@@ -25,47 +25,79 @@ function ProviderView({ id }: { id: string }) {
   const [quartier, setQuartier] = useState("");
   const [mode, setMode] = useState("");
   const [units, setUnits] = useState(1);
+  const [preferredDate, setPreferredDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
+  const currentDate = new Date();
+  const minPreferredDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
 
-  if (loading && provider === undefined) {
+      `Lieu du service : ${quartier.trim() || "à préciser"}.`,
+      preferredDate && `Date souhaitée : ${preferredDate}.`,
     return (
       <main className="pb-6">
         <header className="h-40 rounded-b-[2rem] bg-brand" />
         <div className="relative z-10 -mt-14 space-y-4 px-5">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-72" />
-        </div>
+    if (quartier.trim().length < 2) {
+      setFormError("Indique le quartier ou le lieu de l'intervention.");
+      return;
+    }
+              Déplacement et diagnostic : <b>{formatFcfa(provider.diagnostic_fee)}</b>. Le lien Wave sera proposé après l&apos;envoi de la demande.
+              Si le trajet est long, confirme d&apos;abord avec le prestataire qu&apos;il peut se déplacer jusqu&apos;à ton quartier.
+            <p className="mb-3 text-xs text-foreground/55">Indique le lieu et la date souhaitée. Si le trajet est long, confirme le déplacement avec le prestataire avant de payer. Tu peux aussi lui envoyer des photos sur WhatsApp.</p>
       </main>
     );
-  }
+                <span className="mb-1 block text-sm font-medium text-foreground/80">Lieu de l&apos;intervention</span>
 
   if (!provider) {
     return (
-      <main className="p-8 text-center">
+                  placeholder="Ton quartier, ville ou adresse proche"
+                  required
         <p className="mt-20 text-lg font-semibold">{error || "Prestataire introuvable"}</p>
         <Link href="/dashboard" className="mt-4 inline-block font-semibold text-brand underline">
           Retour à l&apos;accueil
-        </Link>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-foreground/80">Date souhaitée <span className="font-normal text-foreground/50">(facultative)</span></span>
+                <input
+                  type="date"
+                  min={minPreferredDate}
+                  value={preferredDate}
+                  onChange={(e) => setPreferredDate(e.target.value)}
+                  className="w-full rounded-2xl border border-brand/15 bg-[#f3f6fd] px-4 py-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+              </label>
+      const reqId = await rpc<string>("create_request_with_date", {
       </main>
     );
   }
-
+        p_quartier: quartier.trim(),
   const category = getCategory(provider.category_slug);
+        p_preferred_date: preferredDate || null,
   const isFixed = provider.pricing_type === "fixe" && provider.price;
   const isOwner = providerId === provider.id;
   const selectedMode = mode || provider.service_modes[0] || "";
   const total = isFixed ? provider.price! * units : 0;
+  const currentProvider = provider;
 
-  const message = [
-    `Bonjour ${provider.full_name}, je vous contacte via l'application Defar ko.`,
-    quartier && `Mon quartier : ${quartier}`,
-    selectedMode && `Service souhaité : ${MODE_LABELS[selectedMode] ?? selectedMode}`,
-    `Mon besoin : ${problem.trim() || "à préciser"}`,
-    isFixed ? `Tarif affiché : ${formatFcfa(provider.price!)}/${provider.price_unit}` : "Pouvez-vous me donner une idée du prix ?",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  function contactProviderOnWhatsApp() {
+    const profileUrl = new URL(`/prestataire/${id}`, window.location.origin).toString();
+    const message = [
+      `Bonjour ${currentProvider.full_name} 👋`,
+      `Je viens de découvrir votre profil sur Defar ko et j'aimerais discuter d'une intervention.`,
+      `Lieu du service : ${quartier.trim() || "à préciser"}.`,
+      selectedMode && `Mode souhaité : ${MODE_LABELS[selectedMode] ?? selectedMode}.`,
+      `Mon besoin : ${problem.trim() || "je vous donnerai les détails"}.`,
+      isFixed
+        ? `J'ai vu votre tarif de ${formatFcfa(currentProvider.price!)}/${currentProvider.price_unit}.`
+        : "Pourriez-vous vous déplacer pour constater le problème et discuter du prix ?",
+      "Si c'est plus simple, je peux aussi vous envoyer des photos ou une vidéo ici pour vous aider à estimer le travail.",
+      `Votre profil sur Defar ko : ${profileUrl}`,
+      "Merci et à bientôt !",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(whatsappLink(currentProvider.phone, message), "_blank", "noopener,noreferrer");
+  }
 
   async function requestIntervention() {
     if (!user) {
@@ -188,14 +220,17 @@ function ProviderView({ id }: { id: string }) {
         ) : (
           <Card className="fade-up">
             <h2 className="font-bold">Décris ton besoin</h2>
-            <p className="mb-3 text-xs text-foreground/55">Le message WhatsApp sera prérempli avec ces informations.</p>
+            <p className="mb-3 text-xs text-foreground/55">Indique où se trouve l&apos;intervention. Tu pourras ensuite discuter du déplacement ou envoyer des photos sur WhatsApp.</p>
             <div className="space-y-3">
-              <input
-                value={quartier}
-                onChange={(e) => setQuartier(e.target.value)}
-                placeholder="Ton quartier"
-                className="w-full rounded-2xl border border-brand/15 bg-[#f3f6fd] px-4 py-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-              />
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-foreground/80">Quartier du client · lieu de l&apos;intervention</span>
+                <input
+                  value={quartier}
+                  onChange={(e) => setQuartier(e.target.value)}
+                  placeholder="Ex. Parcelles Assainies"
+                  className="w-full rounded-2xl border border-brand/15 bg-[#f3f6fd] px-4 py-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+              </label>
               {provider.service_modes.length > 1 && (
                 <div className="flex flex-wrap gap-2">
                   {provider.service_modes.map((m) => (
@@ -236,14 +271,13 @@ function ProviderView({ id }: { id: string }) {
             </div>
 
             <div className="mt-4 space-y-2">
-              <a
-                href={whatsappLink(provider.phone, message)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={contactProviderOnWhatsApp}
                 className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-success py-3.5 font-semibold text-white"
               >
                 <MessageCircle size={20} /> Écrire sur WhatsApp
-              </a>
+              </button>
               <a href={telLink(provider.phone)} className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-semibold text-white">
                 <Phone size={20} /> Appeler · {formatPhone(provider.phone)}
               </a>
