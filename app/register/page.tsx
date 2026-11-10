@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthShell from "@/components/AuthShell";
 import Field from "@/components/Field";
 import { ErrorBox, InfoBox, PrimaryButton } from "@/components/ui";
@@ -10,8 +10,9 @@ import { getSupabase } from "@/lib/supabase";
 import { isValidPhone, toE164 } from "@/lib/contact";
 import { safeNext } from "@/lib/nav";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -20,8 +21,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
-  const [search, setSearch] = useState("");
-  useEffect(() => setSearch(window.location.search), []);
+  const search = searchParams.toString();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,10 +85,18 @@ export default function RegisterPage() {
       </form>
       <p className="mt-5 text-center text-sm text-foreground/70">
         Déjà un compte ?{" "}
-        <Link href={`/login${search}`} className="font-semibold text-brand underline">
+        <Link href={search ? `/login?${search}` : "/login"} className="font-semibold text-brand underline">
           Se connecter
         </Link>
       </p>
     </AuthShell>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterContent />
+    </Suspense>
   );
 }

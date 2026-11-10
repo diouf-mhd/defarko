@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import RequireAuth from "@/components/RequireAuth";
 import { AddProviderTab, KEY_PAYMENTS, KEY_PROVIDERS, PaymentsTab, ProvidersTab, RequestsTab } from "@/components/admin/tabs";
-import { getAllProviders, getPaymentsToCheck } from "@/lib/api";
+import DashboardOverview from "@/components/admin/DashboardOverview";
+import NotificationsTab from "@/components/admin/NotificationsTab";
+import { getAdminNotifications, getAllProviders, getPaymentsToCheck } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
 import type { useAuth } from "@/lib/auth";
+import { Spinner } from "@/components/ui";
 
 type Auth = ReturnType<typeof useAuth>;
-type TabKey = "valider" | "ouvriers" | "paiements" | "demandes" | "ajouter";
+type TabKey = "dashboard" | "notifications" | "valider" | "ouvriers" | "paiements" | "demandes" | "ajouter";
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: "dashboard", label: "Vue générale" },
+  { key: "notifications", label: "Notifications" },
   { key: "valider", label: "À valider" },
   { key: "ouvriers", label: "Ouvriers" },
   { key: "paiements", label: "Paiements" },
@@ -20,28 +26,27 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 function Inner({ auth }: { auth: Auth }) {
-  const [tab, setTab] = useState<TabKey>("valider");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const tab = TABS.some((item) => item.key === requestedTab) ? (requestedTab as TabKey) : "dashboard";
   const { data: providers } = useQuery(KEY_PROVIDERS, getAllProviders);
   const { data: payments } = useQuery(KEY_PAYMENTS, getPaymentsToCheck, { refreshMs: 20000 });
-
-  useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey);
-  }, []);
+  const { data: notifications } = useQuery("admin:notifications", getAdminNotifications, { refreshMs: 20000 });
 
   function change(k: TabKey) {
-    setTab(k);
-    window.history.replaceState(null, "", `?tab=${k}`); // le bouton retour quitte l'admin au lieu de remonter les onglets
+    router.replace(`/admin?tab=${k}`, { scroll: false });
   }
 
   const badge: Partial<Record<TabKey, number>> = {
+    notifications: (notifications ?? []).filter((item) => !item.read_at).length,
     valider: (providers ?? []).filter((p) => p.status === "en_attente").length,
     paiements: (payments ?? []).filter((p) => p.status === "declare").length,
   };
 
   return (
     <main className="pb-6">
-      <header className="rounded-b-[2rem] bg-brand px-5 pb-5 pt-8 text-white">
+      <header className="rounded-b-4xl bg-brand px-5 pb-5 pt-8 text-white">
         <div className="flex items-center gap-3">
           <BackButton fallback="/compte" />
           <h1 className="text-xl font-bold">Administration</h1>
@@ -64,6 +69,8 @@ function Inner({ auth }: { auth: Auth }) {
       </header>
 
       <section className="space-y-3 px-5 pt-4">
+        {tab === "dashboard" && <DashboardOverview />}
+        {tab === "notifications" && <NotificationsTab />}
         {tab === "valider" && <ProvidersTab pendingOnly />}
         {tab === "ouvriers" && <ProvidersTab pendingOnly={false} />}
         {tab === "paiements" && <PaymentsTab />}
@@ -75,5 +82,9 @@ function Inner({ auth }: { auth: Auth }) {
 }
 
 export default function AdminPage() {
-  return <RequireAuth role="admin">{(auth) => <Inner auth={auth} />}</RequireAuth>;
+  return (
+    <Suspense fallback={<Spinner className="min-h-[60vh]" />}>
+      <RequireAuth role="admin">{(auth) => <Inner auth={auth} />}</RequireAuth>
+    </Suspense>
+  );
 }

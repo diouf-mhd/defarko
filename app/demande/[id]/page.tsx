@@ -59,7 +59,7 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
   if (loading && !req) {
     return (
       <main className="pb-6">
-        <header className="h-28 rounded-b-[2rem] bg-brand" />
+        <header className="h-28 rounded-b-4xl bg-brand" />
         <div className="relative z-10 -mt-8 space-y-4 px-5">
           <Skeleton className="h-48" />
           <Skeleton className="h-32" />
@@ -119,11 +119,23 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
     window.open(whatsappLink(other.phone, message), "_blank", "noopener,noreferrer");
   }
 
+  async function callOther() {
+    if (!other.phone) return;
+    if (viewer === "client") {
+      try {
+        await rpc("log_call", { p_provider: currentRequest.provider_id, p_request: currentRequest.id });
+      } catch (e) {
+        setErr(toError(e));
+      }
+    }
+    window.location.assign(telLink(other.phone));
+  }
+
   const canQuote = viewer === "provider" && ["nouvelle", "diagnostic_paye", "devis_propose"].includes(req.status);
 
   return (
     <main className="pb-6">
-      <header className="rounded-b-[2rem] bg-brand px-5 pb-12 pt-8 text-white">
+      <header className="rounded-b-4xl bg-brand px-5 pb-12 pt-8 text-white">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <BackButton fallback="/demandes" />
@@ -200,9 +212,9 @@ function RequestInner({ id, auth }: { id: string; auth: Auth }) {
             >
               <MessageCircle size={18} /> WhatsApp
             </button>
-            <a href={telLink(other.phone)} className="press flex items-center justify-center gap-2 rounded-2xl bg-brand py-3 text-sm font-semibold text-white">
+            <button type="button" onClick={callOther} className="press flex items-center justify-center gap-2 rounded-2xl bg-brand py-3 text-sm font-semibold text-white">
               <Phone size={18} /> {formatPhone(other.phone)}
-            </a>
+            </button>
           </div>
         )}
 

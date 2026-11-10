@@ -58,14 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    load();
+    const initialLoad = window.setTimeout(() => {
+      void load();
+    }, 0);
     const sb = getSupabase();
-    if (!sb) return;
+    if (!sb) return () => window.clearTimeout(initialLoad);
     const { data } = sb.auth.onAuthStateChange(() => {
       // Ne pas appeler Supabase directement dans ce callback (risque de blocage)
       setTimeout(load, 0);
     });
-    return () => data.subscription.unsubscribe();
+    return () => {
+      window.clearTimeout(initialLoad);
+      data.subscription.unsubscribe();
+    };
   }, [load]);
 
   const signOut = useCallback(async () => {

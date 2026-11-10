@@ -34,18 +34,21 @@ export function useQuery<T>(key: string | null, fetcher: () => Promise<T>, opts?
   }, [key]);
 
   useEffect(() => {
-    if (!key) {
-      setLoading(false);
-      return;
-    }
-    if (cache.has(key)) {
-      setData(cache.get(key) as T);
-      setLoading(false);
-    } else {
-      setData(undefined);
-      setLoading(true);
-    }
-    reload();
+    const timeout = window.setTimeout(() => {
+      if (!key) {
+        setLoading(false);
+        return;
+      }
+      if (cache.has(key)) {
+        setData(cache.get(key) as T);
+        setLoading(false);
+      } else {
+        setData(undefined);
+        setLoading(true);
+      }
+      void reload();
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [key, reload]);
 
   const refreshMs = opts?.refreshMs;

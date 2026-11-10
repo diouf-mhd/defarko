@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, ClipboardList, Hammer, LogOut, ShieldCheck, Store } from "lucide-react";
@@ -32,16 +32,20 @@ function MenuLink({ href, Icon, label, hint }: { href: string; Icon: typeof Hamm
 export default function ComptePage() {
   const router = useRouter();
   const { user, profile, providerId, providerStatus, loading, signOut, refresh } = useAuth();
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [draft, setDraft] = useState<{ fullName: string; phone: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const fullName = draft?.fullName ?? profile?.full_name ?? "";
+  const phone = draft?.phone ?? profile?.phone ?? "";
 
-  useEffect(() => {
-    setFullName(profile?.full_name ?? "");
-    setPhone(profile?.phone ?? "");
-  }, [profile]);
+  function updateDraft(patch: Partial<{ fullName: string; phone: string }>) {
+    setDraft((current) => ({
+      fullName: current?.fullName ?? profile?.full_name ?? "",
+      phone: current?.phone ?? profile?.phone ?? "",
+      ...patch,
+    }));
+  }
 
   if (loading) return <Spinner className="min-h-[60vh]" />;
 
@@ -79,6 +83,7 @@ export default function ComptePage() {
     setBusy(false);
     if (error) return setError(toError(error));
     await refresh();
+    setDraft(null);
     setInfo("Informations enregistrées.");
   }
 
@@ -111,8 +116,8 @@ export default function ComptePage() {
         <Card className="fade-up">
           <h2 className="mb-3 font-bold">Mes informations</h2>
           <form onSubmit={save} className="space-y-3">
-            <Field label="Nom complet" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            <Field label="Téléphone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="77 000 00 00" />
+            <Field label="Nom complet" value={fullName} onChange={(e) => updateDraft({ fullName: e.target.value })} />
+            <Field label="Téléphone" type="tel" value={phone} onChange={(e) => updateDraft({ phone: e.target.value })} placeholder="77 000 00 00" />
             <ErrorBox message={error} />
             <InfoBox message={info} />
             <PrimaryButton type="submit" disabled={busy}>

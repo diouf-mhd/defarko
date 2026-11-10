@@ -34,7 +34,7 @@ function ProviderView({ id }: { id: string }) {
   if (loading && provider === undefined) {
     return (
       <main className="pb-6">
-        <header className="h-40 rounded-b-[2rem] bg-brand" />
+        <header className="h-40 rounded-b-4xl bg-brand" />
         <div className="relative z-10 -mt-14 space-y-4 px-5">
           <Skeleton className="h-64" />
           <Skeleton className="h-72" />
@@ -83,6 +83,17 @@ function ProviderView({ id }: { id: string }) {
     window.open(whatsappLink(currentProvider.phone, message), "_blank", "noopener,noreferrer");
   }
 
+  async function callProvider() {
+    if (user && profile?.role === "client") {
+      try {
+        await rpc("log_call", { p_provider: currentProvider.id, p_request: null });
+      } catch (e) {
+        setFormError(toError(e));
+      }
+    }
+    window.location.assign(telLink(currentProvider.phone));
+  }
+
   async function requestIntervention() {
     if (!user) {
       router.push(`/login?next=${encodeURIComponent(`/prestataire/${id}`)}`);
@@ -120,7 +131,7 @@ function ProviderView({ id }: { id: string }) {
 
   return (
     <main className="pb-6">
-      <header className="flex items-center gap-3 rounded-b-[2rem] bg-brand px-5 pb-28 pt-8 text-white">
+      <header className="flex items-center gap-3 rounded-b-4xl bg-brand px-5 pb-28 pt-8 text-white">
         <BackButton fallback={`/categorie/${currentProvider.category_slug}`} />
         {category && (
           <span className="flex items-center gap-2 text-sm font-medium text-white/85">
@@ -283,9 +294,9 @@ function ProviderView({ id }: { id: string }) {
               >
                 <MessageCircle size={20} /> Écrire sur WhatsApp
               </button>
-              <a href={telLink(currentProvider.phone)} className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-semibold text-white">
+              <button type="button" onClick={callProvider} className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-semibold text-white">
                 <Phone size={20} /> Appeler · {formatPhone(currentProvider.phone)}
-              </a>
+              </button>
             </div>
 
             <div className="mt-5 rounded-2xl border border-sky/40 bg-sky/10 p-4">

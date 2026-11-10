@@ -42,7 +42,7 @@ export default function DashboardPage() {
       </header>
 
       <section className="relative z-10 -mt-12 px-5">
-        <div className="card-shadow rounded-[2rem] bg-white p-4">
+        <div className="card-shadow rounded-4xl bg-white p-4">
           <div className="relative mb-4">
             <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40" />
             <input
@@ -70,7 +70,7 @@ export default function DashboardPage() {
                     <CategoryIcon slug={c.slug} size={64} className="icon-float" />
                     <span className="mt-2 text-sm font-semibold leading-tight">{c.name}</span>
                     {loading && !counts ? (
-                      <Skeleton className="mt-1 h-3 w-16 !rounded-full" />
+                      <Skeleton className="mt-1 h-3 w-16 rounded-full!" />
                     ) : (
                       <span className="mt-0.5 text-xs text-foreground/55">
                         {n > 0 ? `${n} ouvrier${n > 1 ? "s" : ""}` : "Bientôt disponible"}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       <section className="mt-6 px-5">
         <Link
           href="/devenir-prestataire"
-          className="press lift card-shadow flex items-center gap-4 rounded-3xl bg-gradient-to-br from-brand to-[#3a3fd0] p-5 text-white"
+          className="press lift card-shadow flex items-center gap-4 rounded-3xl bg-linear-to-br from-brand to-[#3a3fd0] p-5 text-white"
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
             <Hammer size={24} />

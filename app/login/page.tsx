@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthShell from "@/components/AuthShell";
 import Field from "@/components/Field";
 import { ErrorBox, PrimaryButton } from "@/components/ui";
 import { getSupabase } from "@/lib/supabase";
 import { safeNext } from "@/lib/nav";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [search, setSearch] = useState("");
-  useEffect(() => setSearch(window.location.search), []);
+  const search = searchParams.toString();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +62,7 @@ export default function LoginPage() {
       </form>
       <p className="mt-5 text-center text-sm text-foreground/70">
         Pas encore de compte ?{" "}
-        <Link href={`/register${search}`} className="font-semibold text-brand underline">
+        <Link href={search ? `/register?${search}` : "/register"} className="font-semibold text-brand underline">
           Créer un compte
         </Link>
       </p>
@@ -73,5 +73,13 @@ export default function LoginPage() {
         pour consulter les ouvriers
       </p>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

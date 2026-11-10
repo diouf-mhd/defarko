@@ -79,7 +79,7 @@ export function ProvidersTab({ pendingOnly }: { pendingOnly: boolean }) {
       <ErrorBox message={error || act.error} />
       {list.length === 0 && <Empty text={pendingOnly ? "Aucun ouvrier à valider." : "Aucun ouvrier pour le moment."} />}
       {list.map((p: Provider) => (
-        <Card key={p.id} className="fade-up !p-4">
+        <Card key={p.id} className="fade-up p-4!">
           <div className="flex items-center gap-3">
             <ProviderAvatar name={p.full_name} url={p.photo_url} size={48} />
             <div className="min-w-0 flex-1">
@@ -98,9 +98,9 @@ export function ProvidersTab({ pendingOnly }: { pendingOnly: boolean }) {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {p.status !== "verifie" ? (
-              <ConfirmButton tone="success" label="Valider" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_set_provider_status", { p_provider: p.id, p_status: "verifie" }))} className="!py-2.5 !text-sm" />
+              <ConfirmButton tone="success" label="Valider" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_set_provider_status", { p_provider: p.id, p_status: "verifie" }))} className="py-2.5! text-sm!" />
             ) : (
-              <ConfirmButton tone="ghost" label="Suspendre" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_set_provider_status", { p_provider: p.id, p_status: "suspendu" }))} className="!py-2.5 !text-sm" />
+              <ConfirmButton tone="ghost" label="Suspendre" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_set_provider_status", { p_provider: p.id, p_status: "suspendu" }))} className="py-2.5! text-sm!" />
             )}
             <Link href={`/admin/prestataire/${p.id}`} className="press flex items-center justify-center gap-1.5 rounded-2xl bg-[#f3f6fd] py-2.5 text-sm font-semibold text-brand">
               <ExternalLink size={14} /> Modifier
@@ -130,7 +130,7 @@ export function PaymentsTab() {
       <h2 className="font-bold">À vérifier ({declared.length})</h2>
       {declared.length === 0 && <Empty text="Aucun paiement à vérifier." />}
       {declared.map((p) => (
-        <Card key={p.id} className="fade-up !p-4">
+        <Card key={p.id} className="fade-up p-4!">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-2xl font-extrabold">{formatFcfa(p.amount)}</p>
@@ -156,8 +156,8 @@ export function PaymentsTab() {
             <p className="truncate text-foreground/55">« {p.request?.description} »</p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <ConfirmButton tone="success" label="Paiement reçu" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_validate_payment", { p_payment: p.id }))} className="!py-2.5 !text-sm" />
-            <ConfirmButton tone="ghost" label="Pas reçu" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_reject_payment", { p_payment: p.id }))} className="!py-2.5 !text-sm" />
+            <ConfirmButton tone="success" label="Paiement reçu" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_validate_payment", { p_payment: p.id }))} className="py-2.5! text-sm!" />
+            <ConfirmButton tone="ghost" label="Pas reçu" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_reject_payment", { p_payment: p.id }))} className="py-2.5! text-sm!" />
           </div>
         </Card>
       ))}
@@ -174,7 +174,7 @@ export function PaymentsTab() {
             </span>
             <span className="flex items-center gap-2">
               <b>{formatFcfa(p.amount)}</b>
-              <ConfirmButton tone="brand" label="Marquer payé" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_validate_payment", { p_payment: p.id }))} className="!w-auto !px-3 !py-1.5 !text-xs" />
+              <ConfirmButton tone="brand" label="Marquer payé" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_validate_payment", { p_payment: p.id }))} className="w-auto! px-3! py-1.5! text-xs!" />
             </span>
           </div>
         ))
@@ -199,7 +199,7 @@ export function RequestsTab() {
   return (
     <div className="space-y-3">
       <ErrorBox message={error || act.error} />
-      <Card className="fade-up !p-4">
+      <Card className="fade-up p-4!">
         <p className="text-xs text-foreground/55">Commissions gagnées</p>
         <p className="text-3xl font-extrabold text-success">{formatFcfa(earned)}</p>
       </Card>
@@ -224,7 +224,7 @@ export function RequestsTab() {
         const pct = rates?.[r.provider?.category_slug ?? ""] ?? 10;
         const commission = Math.round((total * pct) / 100);
         return (
-          <Card key={r.id} className="fade-up !p-4">
+          <Card key={r.id} className="fade-up p-4!">
             <div className="flex items-center justify-between gap-2">
               <p className="truncate font-semibold">
                 {r.client?.full_name ?? "Client"} → {r.provider?.full_name ?? "Ouvrier"}
@@ -256,12 +256,12 @@ export function RequestsTab() {
 
             <div className="mt-3 space-y-2">
               {r.status === "termine" && (
-                <ConfirmButton tone="success" label="J'ai reversé l'ouvrier" confirmLabel="Confirmer le reversement" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_payout", { p_request: r.id }))} className="!py-2.5 !text-sm" />
+                <ConfirmButton tone="success" label="J'ai reversé l'ouvrier" confirmLabel="Confirmer le reversement" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_payout", { p_request: r.id }))} className="py-2.5! text-sm!" />
               )}
               {r.status === "litige" && (
                 <div className="grid grid-cols-2 gap-2">
-                  <ConfirmButton tone="success" label="Payer l'ouvrier" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_resolve_dispute", { p_request: r.id, p_outcome: "reverser" }))} className="!py-2.5 !text-sm" />
-                  <ConfirmButton tone="ghost" label="Rembourser client" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_resolve_dispute", { p_request: r.id, p_outcome: "rembourser" }))} className="!py-2.5 !text-sm" />
+                  <ConfirmButton tone="success" label="Payer l'ouvrier" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_resolve_dispute", { p_request: r.id, p_outcome: "reverser" }))} className="py-2.5! text-sm!" />
+                  <ConfirmButton tone="ghost" label="Rembourser client" confirmLabel="Confirmer" disabled={act.busy} onConfirm={() => act.run(() => rpc("admin_resolve_dispute", { p_request: r.id, p_outcome: "rembourser" }))} className="py-2.5! text-sm!" />
                 </div>
               )}
               <Link href={`/demande/${r.id}`} className="press flex items-center justify-center gap-1.5 rounded-2xl bg-[#f3f6fd] py-2.5 text-sm font-semibold text-brand">

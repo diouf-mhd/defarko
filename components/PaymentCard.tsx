@@ -54,7 +54,7 @@ export default function PaymentCard({
           rel="noopener noreferrer"
           className="press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-sky py-3.5 font-semibold text-white"
         >
-          Payer avec Wave
+          {payment.kind === "diagnostic" ? "Payer le déplacement avec Wave" : "Payer avec Wave"}
         </a>
       ) : (
         <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs text-foreground/60">

@@ -73,14 +73,14 @@ export async function getReviews(providerId: string): Promise<Review[]> {
 
 // ---------- Demandes ----------
 export const REQUEST_SELECT =
-  "*, provider:defarko_providers(id, full_name, phone, category_slug, photo_url, diagnostic_fee), client:defarko_profiles(full_name, phone), defarko_payments(*)";
+  "*, provider:defarko_providers(id, full_name, phone, category_slug, photo_url, diagnostic_fee), client:defarko_profiles(full_name, phone), payments:defarko_payments(*)";
 
 export async function getRequest(id: string): Promise<RequestRow | null> {
   const { data, error } = await client()
     .from("defarko_requests")
     .select(REQUEST_SELECT)
     .eq("id", id)
-    .order("created_at", { referencedTable: "defarko_payments", ascending: true })
+    .order("created_at", { referencedTable: "payments", ascending: true })
     .maybeSingle();
   if (error) throw new Error(cleanError(error.message));
   return (data as unknown as RequestRow | null) ?? null;
@@ -137,6 +137,68 @@ export type AdminPayment = Payment & {
     provider?: { full_name: string; phone: string } | null;
   } | null;
 };
+
+export type AdminDashboardStats = {
+  clients_total: number;
+  providers_total: number;
+  providers_pending: number;
+  requests_total: number;
+  requests_active: number;
+  requests_completed: number;
+  requests_cancelled: number;
+  payments_total: number;
+  payments_confirmed: number;
+  payments_pending: number;
+  payments_failed: number;
+  payments_confirmed_amount: number;
+  commissions_paid: number;
+  payouts_pending: number;
+  payouts_completed: number;
+  calls_total: number;
+  notifications_unread: number;
+  requests_by_day: { day: string; count: number }[];
+  requests_by_category: { name: string; count: number }[];
+};
+
+export type AdminNotification = {
+  id: string;
+  read_at: string | null;
+  created_at: string;
+  activity: {
+    id: string;
+    event_type: string;
+    entity_type: string;
+    entity_id: string | null;
+    title: string;
+    message: string;
+    details: Record<string, unknown>;
+    created_at: string;
+  } | null;
+};
+
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
+  const { data, error } = await client().rpc("defarko_admin_dashboard_stats");
+  if (error) throw new Error(cleanError(error.message));
+  return data as AdminDashboardStats;
+}
+
+export async function getAdminNotifications(): Promise<AdminNotification[]> {
+  const { data, error } = await client()
+    .from("defarko_admin_notifications")
+    .select("id, read_at, created_at, activity:defarko_admin_activity(id, event_type, entity_type, entity_id, title, message, details, created_at)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(cleanError(error.message));
+  return (data ?? []) as unknown as AdminNotification[];
+}
+
+export async function markAdminNotificationRead(id: string): Promise<void> {
+  await rpc("admin_mark_notification_read", { p_notification: id });
+}
+
+export async function logCall(providerId: string, requestId: string | null = null): Promise<string> {
+  return rpc<string>("log_call", { p_provider: providerId, p_request: requestId });
+}
 
 export async function getPaymentsToCheck(): Promise<AdminPayment[]> {
   const { data, error } = await client()

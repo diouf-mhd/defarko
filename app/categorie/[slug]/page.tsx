@@ -52,7 +52,7 @@ function CategoryView({ slug }: { slug: string }) {
 
   return (
     <main className="pb-6">
-      <header className="rounded-b-[2rem] bg-brand px-5 pb-6 pt-8 text-white">
+      <header className="rounded-b-4xl bg-brand px-5 pb-6 pt-8 text-white">
         <div className="flex items-center gap-3">
           <BackButton />
           <CategoryIcon slug={slug} size={40} />

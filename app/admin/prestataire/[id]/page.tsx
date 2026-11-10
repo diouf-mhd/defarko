@@ -7,7 +7,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 import ProviderForm, { type ProviderFormValues } from "@/components/ProviderForm";
 import RequireAuth from "@/components/RequireAuth";
 import { Card, ErrorBox, InfoBox, Skeleton } from "@/components/ui";
-import { getProvider, rpc, toError } from "@/lib/api";
+import { getProvider, rpc } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import { clearQueryCache, useQuery } from "@/lib/useQuery";
 import type { useAuth } from "@/lib/auth";
@@ -51,7 +51,7 @@ function Inner({ id, auth }: { id: string; auth: Auth }) {
 
   return (
     <main className="pb-6">
-      <header className="rounded-b-[2rem] bg-brand px-5 pb-10 pt-8 text-white">
+      <header className="rounded-b-4xl bg-brand px-5 pb-10 pt-8 text-white">
         <div className="flex items-center gap-3">
           <BackButton fallback="/admin?tab=ouvriers" />
           <h1 className="text-xl font-bold">Modifier l&apos;ouvrier</h1>

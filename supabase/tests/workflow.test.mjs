@@ -1,13 +1,26 @@
 import { PGlite } from '@electric-sql/pglite';
 import fs from 'node:fs';
+process.on('unhandledRejection', (error) => {
+  console.error('Erreur SQL de test:', error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});
+process.on('uncaughtException', (error) => {
+  console.error('Erreur SQL de test:', error.message);
+  process.exit(1);
+});
 const db = new PGlite();
 const q = async (sql, p) => (await db.query(sql, p)).rows;
 let pass = 0, fail = 0;
-const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fail++; console.log('  ✗ FAIL:', msg); } };
+const ok = (condition, message) => {
+  if (condition) pass++;
+  else {
+    fail++;
+    console.error('  ✗ FAIL:', message);
+  }
+};
 const asUser = async (uid, role = 'authenticated') => {
   await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${uid ?? ''}', false); set role ${role};`);
 };
-const root = async () => { await db.exec('reset role;'); };
 const fails = async (fn) => { try { await fn(); return null; } catch (e) { return e.message; } };
 
 // --- Stub Supabase auth
@@ -29,6 +42,7 @@ await db.exec(`insert into public.profiles (id, email, nom, prenom, role) values
 await db.exec(fs.readFileSync(new URL('../migrations/20261110000000_init.sql', import.meta.url), 'utf8'));
 await db.exec(fs.readFileSync(new URL('../migrations/20261110000200_backfill_profiles.sql', import.meta.url), 'utf8'));
 await db.exec(fs.readFileSync(new URL('../migrations/20261110000300_preferred_request_date.sql', import.meta.url), 'utf8'));
+await db.exec(fs.readFileSync(new URL('../migrations/20261110000400_admin_operations.sql', import.meta.url), 'utf8'));
 console.log('Schéma chargé sans erreur');
 
 const [legacyProfile] = await q(`select full_name, phone, role from public.defarko_profiles where id='${legacyUser.id}'`);
@@ -41,10 +55,12 @@ const authTriggers = await q(`select tgname from pg_trigger where tgrelid = 'aut
 ok(authTriggers.some((trigger) => trigger.tgname === 'on_auth_user_created') && authTriggers.some((trigger) => trigger.tgname === 'on_defarko_user_created'), "les déclencheurs d'inscription cohabitent");
 
 const [A] = await q(`insert into auth.users (email, raw_user_meta_data) values ('admin@x.sn', '{"full_name":"Admin","phone":"770000000"}') returning id`);
+const [B] = await q(`insert into auth.users (email, raw_user_meta_data) values ('admin2@x.sn', '{"full_name":"Admin 2","phone":"770000001"}') returning id`);
 const [C] = await q(`insert into auth.users (email, raw_user_meta_data) values ('client@x.sn', '{"full_name":"Client","phone":"771111111","role":"admin"}') returning id`);
 const [P] = await q(`insert into auth.users (email, raw_user_meta_data) values ('ouvrier@x.sn', '{"full_name":"Ouvrier"}') returning id`);
 const [T] = await q(`insert into auth.users (email, raw_user_meta_data) values ('prof@x.sn', '{"full_name":"Prof"}') returning id`);
 await db.exec(`update public.defarko_profiles set role='admin' where id='${A.id}'`);
+await db.exec(`update public.defarko_profiles set role='admin' where id='${B.id}'`);
 
 console.log('\n1. Rôles et inscription');
 let r = await q(`select role from public.defarko_profiles where id='${C.id}'`);
@@ -86,6 +102,35 @@ ok(r.length === 1, "après vérification, le public voit l'ouvrier (sans compte)
 e = await fails(() => q(`select public.defarko_create_request('${provId}','test','domicile','x',1)`));
 ok(e && /permission denied/i.test(e), "un visiteur sans compte ne peut pas créer de demande");
 
+await asUser(C.id);
+const [{ call_id: firstCall }] = await q(`select public.defarko_log_call('${provId}') as call_id`);
+const [{ call_id: repeatedCall }] = await q(`select public.defarko_log_call('${provId}') as call_id`);
+ok(firstCall === repeatedCall, "un double clic d'appel est dédupliqué pendant 30 secondes");
+await asUser(A.id);
+const [{ role: adminRole }] = await q(`select role from public.defarko_profiles where id='${A.id}'`);
+ok(adminRole === 'admin', "le compte de contrôle possède le rôle admin");
+let dashboardStats = null;
+e = await fails(async () => { [dashboardStats] = await q(`select public.defarko_admin_dashboard_stats() as stats`); });
+ok(!e && dashboardStats.stats.providers_total === 1 && dashboardStats.stats.calls_total === 1, `le tableau de bord admin renvoie des statistiques réelles${e ? ` (${e})` : ''}`);
+let unreadA = null;
+let unreadB = null;
+e = await fails(async () => {
+  [unreadA] = await q(`select count(*) as unread from public.defarko_admin_notifications where recipient_id='${A.id}' and read_at is null`);
+  [unreadB] = await q(`select count(*) as unread from public.defarko_admin_notifications where recipient_id='${B.id}' and read_at is null`);
+});
+ok(!e && Number(unreadA?.unread) > 0 && unreadA?.unread === unreadB?.unread, `les deux admins reçoivent les mêmes notifications${e ? ` (${e})` : ''}`);
+let notificationId = null;
+e = await fails(async () => {
+  const [notification] = await q(`select id from public.defarko_admin_notifications where recipient_id='${A.id}' and read_at is null limit 1`);
+  notificationId = notification.id;
+  await db.exec(`select public.defarko_admin_mark_notification_read('${notificationId}')`);
+});
+ok(!e, `un admin peut marquer une notification comme lue${e ? ` (${e})` : ''}`);
+if (notificationId) {
+  const [{ readAt }] = await q(`select read_at as "readAt" from public.defarko_admin_notifications where id='${notificationId}'`);
+  ok(Boolean(readAt), "le marquage comme lu est conservé");
+}
+
 console.log('\n3. Parcours complet : diagnostic → devis → complément → confirmation → commission');
 await asUser(C.id);
 e = await fails(() => q(`select public.defarko_create_request_with_date('${provId}','Panne de courant dans le salon','domicile','Diamniadio',1,current_date - 1)`));
@@ -95,6 +140,9 @@ r = await q(`select preferred_date = current_date + 1 as date_matches from publi
 ok(r[0].date_matches, "la date souhaitée est enregistrée avec la demande");
 r = await q(`select status, diagnostic_fee from public.defarko_requests where id='${reqId}'`);
 ok(r[0].status === 'diagnostic_a_payer' && r[0].diagnostic_fee === 3000, "demande créée : diagnostic 3000 à payer");
+const [{ stats: requestStats }] = await q(`select public.defarko_admin_dashboard_stats() as stats`);
+ok(requestStats.requests_by_day.reduce((sum, item) => sum + item.count, 0) === 1, "le graphique quotidien compte les demandes réelles");
+ok(requestStats.requests_by_category[0].name === 'Électricien' && requestStats.requests_by_category[0].count === 1, "le classement des métiers utilise les demandes réelles");
 r = await q(`select kind, amount, status from public.defarko_payments where request_id='${reqId}'`);
 ok(r.length === 1 && r[0].kind === 'diagnostic' && r[0].amount === 3000, "paiement de diagnostic créé");
 
