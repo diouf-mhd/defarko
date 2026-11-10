@@ -1,16 +1,24 @@
+import Image from "next/image";
 import { getCategory } from "@/lib/categories";
 
 export default function CategoryIcon({ slug, size = 64, className = "" }: { slug: string; size?: number; className?: string }) {
   const cat = getCategory(slug);
   if (!cat) return null;
-  const Icon = cat.icon;
   return (
     <span
       aria-hidden="true"
-      className="inline-flex shrink-0 items-center justify-center rounded-2xl"
-      style={{ width: size, height: size, color: cat.color, backgroundColor: cat.background }}
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white"
+      style={{ width: size, height: size }}
     >
-      <Icon size={Math.max(14, Math.round(size * 0.68))} strokeWidth={2.6} className={`select-none ${className}`} />
+      <Image
+        src={cat.icon}
+        alt=""
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        className={`h-full w-full select-none object-contain ${className}`}
+        draggable={false}
+      />
     </span>
   );
 }
